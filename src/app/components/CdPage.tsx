@@ -179,51 +179,52 @@ const startCooldownTimer = (cooldownName: keyof typeof cooldownTimes, nickname: 
     }
   }, []);
 
-  // Escutando os eventos de cooldown emitidos do backend
-  useEffect(() => {
-    const handleCooldownEvent = (event: { event: string }) => {
-      const nickname = typeof window !== "undefined" ? localStorage.getItem("nickname") : null;
-      if (!nickname) return;
+ useEffect(() => {
+  const handleCooldownEvent = (event: { event: string }) => {
+    const nickname = typeof window !== "undefined" ? localStorage.getItem("nickname") : null;
+    if (!nickname) return;
 
-      console.log('Evento de cooldown recebido:', event);
+    console.log('Evento de cooldown recebido:', event);
 
-      switch (event.event) {
-        case "bota":
-          startCooldownTimer("bota", nickname);
-          break;
-        case "peito":
-          startCooldownTimer("peito", nickname);
-          break;
-        case "pocao":
-          startCooldownTimer("pocao", nickname);
-          break;
-        case "elmo":
-          startCooldownTimer("elmo", nickname);
-          break;
-        case "ultimate":
-          startCooldownTimer("ultimate", nickname);
-          break;
-        default:
-          break;
-      }
-    };
+    switch (event.event) {
+      case "bota":
+        startCooldownTimer("bota", nickname);
+        break;
+      case "peito":
+        startCooldownTimer("peito", nickname);
+        break;
+      case "pocao":
+        startCooldownTimer("pocao", nickname);
+        break;
+      case "elmo":
+        startCooldownTimer("elmo", nickname);
+        break;
+      case "ultimate":
+        startCooldownTimer("ultimate", nickname);
+        break;
+      default:
+        break;
+    }
+  };
 
-    // Registrando os ouvintes de eventos
-    listen("bota", handleCooldownEvent);
-    listen("peito", handleCooldownEvent);
-    listen("elmo", handleCooldownEvent);
-    listen("pocao", handleCooldownEvent);
-    listen("ultimate", handleCooldownEvent);
+  // Registrando ouvintes e armazenando unlisteners
+  const unlisteners: Promise<() => void>[] = [
+    listen("bota", handleCooldownEvent),
+    listen("peito", handleCooldownEvent),
+    listen("elmo", handleCooldownEvent),
+    listen("pocao", handleCooldownEvent),
+    listen("ultimate", handleCooldownEvent),
+  ];
 
-    return () => {
-      // Removendo os ouvintes de eventos ao desmontar o componente
-      listen("bota", handleCooldownEvent).then((unlisten) => unlisten());
-      listen("peito", handleCooldownEvent).then((unlisten) => unlisten());
-      listen("elmo", handleCooldownEvent).then((unlisten) => unlisten());
-      listen("pocao", handleCooldownEvent).then((unlisten) => unlisten());
-      listen("ultimate", handleCooldownEvent).then((unlisten) => unlisten());
-    };
-  }, [partyId, cooldownTimes]);
+  // Cleanup
+  return () => {
+    unlisteners.forEach(async (unlistenPromise) => {
+      const unlisten = await unlistenPromise;
+      unlisten(); // Remove o listener
+    });
+  };
+}, [partyId, cooldownTimes]);
+
 
   // Função para mover os usuários para cima ou para baixo
   const moveUser = (index: number, direction: "up" | "down") => {

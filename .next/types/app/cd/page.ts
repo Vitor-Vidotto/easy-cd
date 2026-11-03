@@ -1,4 +1,4 @@
-// File: /home/vidottonote/Desktop/Dev/eady-cd/src/app/cd/page.tsx
+// File: H:\projetos\albion-cooldown\src\app\cd\page.tsx
 import * as entry from '../../../../src/app/cd/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

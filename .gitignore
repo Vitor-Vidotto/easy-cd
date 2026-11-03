@@ -50,3 +50,7 @@ pids
 .idea
 debug.log
 TODO.md
+
+__pycache__/
+config_cv.json
+tsconfig.tsbuildinfo

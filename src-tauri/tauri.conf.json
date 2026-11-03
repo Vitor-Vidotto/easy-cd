@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Easy CD",  
+  "productName": "Easy CD",
   "version": "0.1.0",
   "identifier": "easycd",
   "build": {
@@ -10,21 +10,22 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Easy CD",  
+        "title": "Easy CD",
         "width": 900,
         "height": 800,
         "resizable": true,
         "transparent": true,
         "fullscreen": false,
         "alwaysOnTop": true,
-        "url": "http://localhost:3000",
-        "label": "easycd", 
+        "url": "/",
+        "label": "easycd",
         "visible": true
       },
       {
-        "title": "Easy CD", 
+        "title": "Easy CD",
         "width": 900,
         "height": 800,
         "url": "splash.html",

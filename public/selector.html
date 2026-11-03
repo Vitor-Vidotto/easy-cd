@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Selecionar Barra de Skills</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      cursor: crosshair;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="overlay"></canvas>
+  <script>
+    const SLOTS = ["Ult (E)", "Peito (R)", "Elmo (D)", "Bota (F)", "Poção (1)"];
+    const params = new URLSearchParams(window.location.search);
+    const vx = parseInt(params.get("vx") || "0", 10);
+    const vy = parseInt(params.get("vy") || "0", 10);
+    const vw = parseInt(params.get("vw") || String(window.screen.width), 10);
+    const vh = parseInt(params.get("vh") || String(window.screen.height), 10);
+
+    const canvas = document.getElementById("overlay");
+    const ctx = canvas.getContext("2d");
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let curX = 0;
+    let curY = 0;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function draw() {
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      ctx.clearRect(0, 0, W, H);
+
+      // Escurece levemente a tela
+      ctx.fillStyle = "rgba(10, 10, 14, 0.42)";
+      ctx.fillRect(0, 0, W, H);
+
+      // Instrução no topo
+      ctx.save();
+      ctx.fillStyle = "rgba(18, 18, 22, 0.88)";
+      ctx.strokeStyle = "#f2a900";
+      ctx.lineWidth = 1.5;
+      const bannerW = 670;
+      const bannerH = 44;
+      const bx = Math.max(20, (W - bannerW) / 2);
+      const by = 28;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bannerW, bannerH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#f2a900";
+      ctx.font = "bold 15px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        "Arraste 1 retângulo cobrindo os 5 slots: do [E] até o [1]   •   ESC ou Botão Direito cancela",
+        bx + bannerW / 2,
+        by + bannerH / 2
+      );
+      ctx.restore();
+
+      if (!isDragging) return;
+
+      const x1 = Math.min(startX, curX);
+      const y1 = Math.min(startY, curY);
+      const x2 = Math.max(startX, curX);
+      const y2 = Math.max(startY, curY);
+      const w = x2 - x1;
+      const h = y2 - y1;
+
+      if (w < 4 || h < 4) return;
+
+      // Deixa o interior 100% transparente/claro para enxergar nitidamente os ícones do Albion
+      ctx.clearRect(x1, y1, w, h);
+
+      // Borda externa dourada
+      ctx.strokeStyle = "#f2a900";
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(x1, y1, w, h);
+
+      if (w >= 50 && h >= 18) {
+        const slotW = w / 5;
+        for (let i = 0; i < 5; i++) {
+          const sx1 = x1 + i * slotW;
+          const sx2 = sx1 + slotW;
+
+          if (i > 0) {
+            ctx.save();
+            ctx.strokeStyle = "#22c55e";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(sx1, y1);
+            ctx.lineTo(sx1, y2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Área central onde o número branco é lido
+          const cx1 = sx1 + slotW * 0.16;
+          const cy1 = y1 + h * 0.24;
+          const cw = slotW * 0.68;
+          const ch = h * 0.52;
+          ctx.strokeStyle = "rgba(0, 212, 255, 0.85)";
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(cx1, cy1, cw, ch);
+
+          // Etiqueta de cada slot acima da barra
+          const label = SLOTS[i];
+          const lx = (sx1 + sx2) / 2;
+          const ly = Math.max(16, y1 - 14);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+          ctx.fillRect(lx - 34, ly - 10, 68, 19);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, lx, ly);
+        }
+      }
+    }
+
+    function toPhysical(clientX, clientY) {
+      const px = vx + Math.round((clientX / window.innerWidth) * vw);
+      const py = vy + Math.round((clientY / window.innerHeight) * vh);
+      return { px, py };
+    }
+
+    async function sendResult(bbox) {
+      try {
+        if (window.__TAURI__ && window.__TAURI__.core) {
+          await window.__TAURI__.core.invoke("finish_region_selection", { bbox });
+        } else if (window.__TAURI_INTERNALS__) {
+          await window.__TAURI_INTERNALS__.invoke("finish_region_selection", { bbox });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousedown", (e) => {
+      if (e.button === 2) {
+        e.preventDefault();
+        sendResult(null);
+        return;
+      }
+      if (e.button !== 0) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      curX = e.clientX;
+      curY = e.clientY;
+      draw();
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      curX = e.clientX;
+      curY = e.clientY;
+      draw();
+    });
+
+    window.addEventListener("mouseup", (e) => {
+      if (!isDragging || e.button !== 0) return;
+      isDragging = false;
+      const p1 = toPhysical(Math.min(startX, e.clientX), Math.min(startY, e.clientY));
+      const p2 = toPhysical(Math.max(startX, e.clientX), Math.max(startY, e.clientY));
+      if (p2.px - p1.px >= 60 && p2.py - p1.py >= 20) {
+        sendResult({ x1: p1.px, y1: p1.py, x2: p2.px, y2: p2.py });
+      } else {
+        sendResult(null);
+      }
+    });
+
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        sendResult(null);
+      }
+    });
+
+    resize();
+  </script>
+</body>
+</html>
+

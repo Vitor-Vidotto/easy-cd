@@ -1,18 +1,16 @@
 [package]
 name = "app"
 version = "0.1.0"
-description = "A Tauri App"
+description = "Easy CD - Albion Cooldown Vision Tracker"
 authors = ["you"]
 license = ""
 repository = ""
 edition = "2021"
 rust-version = "1.77.2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 name = "app_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.0.1", features = [] }
@@ -23,17 +21,27 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.0.6", features = [] }
 tauri-plugin-log = "2.0.0-rc"
-lazy_static = "1.4"
 tauri-plugin-dialog = "2"
-chrono = "0.4"
-dpi = "0.1.1"
-regex = "1.9"
 tauri-plugin-global-shortcut = "2.2.0"
 device_query = "0.2"
-tokio = { version = "1", features = ["full"] }
+regex = "1.9"
+base64 = "0.22"
+png = "0.17"
 
-[build]
-target = "x86_64-pc-windows-gnu"
+[dependencies.windows]
+version = "0.58"
+features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_HiDpi",
+  "Media_Ocr",
+  "Graphics_Imaging",
+  "Globalization",
+  "Storage_Streams",
+  "Security_Cryptography",
+]
 
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-global-shortcut = "2"
+[profile.release]
+strip = true
+lto = "thin"
